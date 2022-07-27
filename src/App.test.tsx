@@ -6,4 +6,7 @@ test('renders learn react link', () => {
   render(<App />);
   const linkElement = screen.getByText(/learn react/i);
   expect(linkElement).toBeInTheDocument();
+
+
+  // Validar Que el año solo de trimestres de ese año
 });
