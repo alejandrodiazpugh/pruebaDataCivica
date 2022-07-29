@@ -1,12 +1,25 @@
 import React, { useEffect, useState, useReducer } from "react";
 import { csv, DSVRowArray } from "d3";
-import { ResponsiveLine } from "@nivo/line";
+import { ResponsiveLine, Serie } from "@nivo/line";
+
+type chartData = [
+  {
+    'id'?: string;
+    'data': [
+      {
+        'x': string;
+        'y': number;
+      },
+    ];
+  }
+];
 
 export default function DataFetch() {
   const dataUrl: string =
     "https://gist.githubusercontent.com/alejandrodiazpugh/bb983cb55671ad9a79eb2577cab12008/raw/identificacion_humana.csv";
 
   const [data, setData] = useState<DSVRowArray<string>>();
+  const [graphData, setGraphData] = useState<Array<Serie>|any>([]);
   const [loading, setLoading] = useState(true);
 
   const mockData = [
@@ -82,14 +95,42 @@ export default function DataFetch() {
   useEffect(() => {
     csv(dataUrl) // obtener datos
       .then(setData)
+      .then(() => {
+        let chartData: chartData = [{data:[{x:'', y:0}]}];
+
+        for (const column of data?.columns!) {
+        //   chartData.push({ id: column });
+          data?.map((caso: any) => {
+            let parsedY: number = parseInt(caso[column]);
+            if (isNaN(parsedY)) {
+              return;
+            }
+            let parsedX: string = `${caso.Año}-${caso.Trimestre}`;
+            let dataPoint = { x: parsedX, y: parsedY };
+            if(!chartData[data.columns.indexOf(column)]) {
+                chartData[data.columns.indexOf(column)] = {id: column, data: [dataPoint]}
+            } else {
+                chartData[data.columns.indexOf(column)].data?.push(dataPoint);
+            }
+          });
+        }
+        chartData.splice(0,3);
+        console.log(chartData);
+        setTimeout(() => {
+            setGraphData(chartData);
+        }, 1000)
+        
+      })
       .catch((err) => {
-        console.log(err);
+        console.log("Error:" + err);
       })
       .finally(() => {
         // esperar a que lleguen los datos
         setLoading(false);
       });
   }, [loading]);
+
+ 
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     console.log(e.currentTarget.value);
@@ -138,7 +179,7 @@ export default function DataFetch() {
 
       <div style={{ width: "80vw", height: "50vh" }}>
         <ResponsiveLine
-          data={mockData}
+          data={graphData}
           margin={{ top: 50, right: 110, bottom: 50, left: 60 }}
           xScale={{ type: "point" }}
           yScale={{
